@@ -1,55 +1,55 @@
-const http = require('http');
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ port: 8080 });
 
-const PORT = 3000;
+let clients = [];
 
-const server = http.createServer((req, res) => {
-  // Set the response header with status and content type
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
+// Handle WebSocket connections
+wss.on('connection', (ws) => {
+    clients.push(ws);
 
-  // Route handling
-  if (req.url === '/' && req.method === 'GET') {
-    res.end('Welcome to the Home Page!');
-  } else if (req.url === '/about' && req.method === 'GET') {
-    res.end('This is the About Page.');
-  } else if (req.url === '/contact' && req.method === 'GET') {
-    res.end('Contact us at contact@example.com');
-  } else {
-    res.end('hii there');
-  }
+    ws.on('message', (message) => {
+        // Parse the incoming message as JSON
+        const data = JSON.parse(message);
+
+        // Broadcast the message to the other client
+        clients.forEach((client) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(data));
+            }
+        });
+    });
+
+    // Remove client on close
+    ws.on('close', () => {
+        clients = clients.filter((client) => client !== ws);
+    });
 });
 
-// Start the server
-server.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+console.log('WebSocket signaling server is running on ws://localhost:8080');
 
 
 
-// const WebSocket = require('ws');
-// const wss = new WebSocket.Server({ port: 8080 });
+// const http = require('http');
 
-// let clients = [];
+// const PORT = 3000;
 
-// // Handle WebSocket connections
-// wss.on('connection', (ws) => {
-//     clients.push(ws);
+// const server = http.createServer((req, res) => {
+//   // Set the response header with status and content type
+//   res.writeHead(200, { 'Content-Type': 'text/plain' });
 
-//     ws.on('message', (message) => {
-//         // Parse the incoming message as JSON
-//         const data = JSON.parse(message);
-
-//         // Broadcast the message to the other client
-//         clients.forEach((client) => {
-//             if (client !== ws && client.readyState === WebSocket.OPEN) {
-//                 client.send(JSON.stringify(data));
-//             }
-//         });
-//     });
-
-//     // Remove client on close
-//     ws.on('close', () => {
-//         clients = clients.filter((client) => client !== ws);
-//     });
+//   // Route handling
+//   if (req.url === '/' && req.method === 'GET') {
+//     res.end('Welcome to the Home Page!');
+//   } else if (req.url === '/about' && req.method === 'GET') {
+//     res.end('This is the About Page.');
+//   } else if (req.url === '/contact' && req.method === 'GET') {
+//     res.end('Contact us at contact@example.com');
+//   } else {
+//     res.end('hii there');
+//   }
 // });
 
-// console.log('WebSocket signaling server is running on ws://localhost:8080');
+// // Start the server
+// server.listen(PORT, () => {
+//   console.log(`Server is running on http://localhost:${PORT}`);
+// });
